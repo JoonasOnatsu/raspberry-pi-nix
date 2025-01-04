@@ -2,7 +2,8 @@
   description = "raspberry-pi nixos configuration";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    flake-utils.url = "github:numtide/flake-utils";
     u-boot-src = {
       flake = false;
       url = "https://ftp.denx.de/pub/u-boot/u-boot-2024.07.tar.bz2";
@@ -27,65 +28,109 @@
       flake = false;
       url = "github:RPi-Distro/bluez-firmware/bookworm";
     };
-    rpicam-apps-src = {
-      flake = false;
-      url = "github:raspberrypi/rpicam-apps/v1.5.2";
-    };
-    libcamera-src = {
-      flake = false;
-      url = "github:raspberrypi/libcamera/69a894c4adad524d3063dd027f5c4774485cf9db"; # v0.3.1+rpt20240906
-    };
-    libpisp-src = {
-      flake = false;
-      url = "github:raspberrypi/libpisp/v1.0.7";
-    };
   };
 
-  outputs = srcs@{ self, ... }:
-    let
-      pinned = import srcs.nixpkgs {
-        system = "aarch64-linux";
-        overlays = with self.overlays; [ core libcamera ];
-      };
-    in
-    {
-      overlays = {
-        core = import ./overlays (builtins.removeAttrs srcs [ "self" ]);
-        libcamera = import ./overlays/libcamera.nix (builtins.removeAttrs srcs [ "self" ]);
-      };
-      nixosModules = {
-        raspberry-pi = import ./rpi {
-          inherit pinned;
-          core-overlay = self.overlays.core;
-          libcamera-overlay = self.overlays.libcamera;
-        };
-        sd-image = import ./sd-image;
-      };
-      nixosConfigurations = {
-        rpi-example = srcs.nixpkgs.lib.nixosSystem {
-          system = "aarch64-linux";
-          modules = [ self.nixosModules.raspberry-pi self.nixosModules.sd-image ./example ];
-        };
-      };
-      checks.aarch64-linux = self.packages.aarch64-linux;
-      packages.aarch64-linux = with pinned.lib;
-        let
-          kernels =
-            foldlAttrs f { } pinned.rpi-kernels;
-          f = acc: kernel-version: board-attr-set:
-            foldlAttrs
-              (acc: board-version: drv: acc // {
-                "linux-${kernel-version}-${board-version}" = drv;
-              })
-              acc
-              board-attr-set;
-        in
-        {
-          example-sd-image = self.nixosConfigurations.rpi-example.config.system.build.sdImage;
-          firmware = pinned.raspberrypifw;
-          libcamera = pinned.libcamera;
-          wireless-firmware = pinned.raspberrypiWirelessFirmware;
-          uboot-rpi-arm64 = pinned.uboot-rpi-arm64;
-        } // kernels;
-    };
+  outputs = inputs @ {
+    self,
+    nixpkgs,
+    flake-utils,
+    ...
+  }: let
+    #inherit (self) outputs;
+    localSystem = "x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${localSystem};
+    lib = nixpkgs.lib;
+
+    platforms = import ./lib/platforms.nix {inherit nixpkgs;};
+
+    # Do this complicated evaluation stuff here
+    # to make Nix understand that we want to use
+    # the binary cache to avoid building everything
+    # from scratch.
+    #forEachSystem = systems: fn: lib.genAttrs systems (system: fn system);
+    #forAllSystems = forEachSystem rpiSystems;
+    forEachPlatform = fn: lib.mapAttrs (plat: cfg: fn cfg.pkgsCross cfg) platforms;
+  in {
+    inherit lib;
+    packages = forEachPlatform (
+      pkgs: cfg:
+        import ./packages {inherit pkgs;}
+    );
+
+    #formatter = forEachPlatform (_: pkgsNative.alejandra);
+    #checks = forEachPlatform (pkgs': self.packages.${pkgs'.system});
+  };
+
+  # Format the Nix code in this flake
+  # Alejandra is a Nix formatter with a beautiful output
+  #formatter = forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.alejandra);
+  #checks = forAllSystems (system: self.packages.${system});
+
+  #packages = forAllSystems (
+  #  system: let
+  #    pkgs = nixpkgsFor.${system};
+  #    pkgs' = pkgs.pkgsCross.raspberryPi;
+  #  in {
+  #    libpisp = pkgs'.callPackage ./packages/libpisp.nix {};
+  #    rpicam-apps = pkgs'.callPackage ./packages/rpicam-apps.nix {};
+  #    #example-sd-image = self.nixosConfigurations.${system}.rpi-example.config.system.build.sdImage;
+  #    #firmware = pkgs.raspberrypifw;
+  #    #libcamera = pkgs.libcamera;
+  #    #wireless-firmware = pkgs.raspberrypiWirelessFirmware;
+  #    #uboot-rpi-arm64 = pkgs.uboot-rpi-arm64;
+  #  }
+  #);
+
+  #packages = forAllSystems (
+  #  system: let
+  #    pkgs = nixpkgsFor.${system};
+  #  in
+  #    with pkgs.lib; let
+  #      kernels = foldlAttrs (acc: kernel-version: board-attr-set:
+  #        foldlAttrs
+  #        (acc: board-version: drv:
+  #          acc
+  #          // {
+  #            "linux-${kernel-version}-${board-version}" = drv;
+  #          })
+  #        acc
+  #        board-attr-set) {}
+  #      pkgs.rpi-kernels;
+  #    in {
+  #      inherit kernels;
+  #      example-sd-image = self.nixosConfigurations.${system}.rpi-example.config.system.build.sdImage;
+  #      firmware = pkgs.raspberrypifw;
+  #      libcamera = pkgs.libcamera;
+  #      wireless-firmware = pkgs.raspberrypiWirelessFirmware;
+  #      uboot-rpi-arm64 = pkgs.uboot-rpi-arm64;
+  #    }
+  #);
+
+  #overlays = {
+  #  core = import ./overlays/core.nix (builtins.removeAttrs inputs ["self"]);
+  #  libcamera = import ./overlays/libcamera.nix (builtins.removeAttrs inputs ["self"]);
+  #};
+  #nixosModules = forAllSystems (system: {
+  #  raspberry-pi = let
+  #    pinned = nixpkgsFor.${system};
+  #  in
+  #    import ./rpi {
+  #      inherit pinned;
+  #      core-overlay = self.overlays.core;
+  #      libcamera-overlay = self.overlays.libcamera;
+  #    };
+  #  sd-image = import ./sd-image;
+  #});
+  #nixosConfigurations = forAllSystems (
+  #  system: {
+  #    rpi-example = nixpkgs.lib.nixosSystem {
+  #      inherit system;
+  #      modules = [
+  #        self.nixosModules.${system}.raspberry-pi
+  #        self.nixosModules.${system}.sd-image
+  #        ./example
+  #      ];
+  #    };
+  #  }
+  #);
 }
