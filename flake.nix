@@ -34,7 +34,6 @@
   outputs = inputs @ {
     self,
     nixpkgs,
-    flake-utils,
     ...
   }: let
     #inherit (self) outputs;
