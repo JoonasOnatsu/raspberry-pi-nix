@@ -36,12 +36,30 @@
     nixpkgs,
     ...
   }: let
-    #inherit (self) outputs;
-    localSystem = "x86_64-linux";
-    pkgs = nixpkgs.legacyPackages.${localSystem};
+    inherit (self) outputs;
+    localSystem = {
+      config = "x86_64-unknown-linux-gnu";
+      system = "x86_64-linux";
+    };
+    #pkgs = nixpkgs.legacyPackages.${localSystem};
     lib = nixpkgs.lib;
 
     platforms = import ./lib/platforms.nix {inherit nixpkgs;};
+
+    mkPlatformPkgs = conf: (
+      import nixpkgs {
+        # Just setting the 'system' seems to screw up 'buildPlatform'/'hostPlatform'
+        inherit localSystem;
+        inherit (conf) crossSystem;
+        config = {
+          allowUnsupportedSystem = true;
+          allowUnfree = true;
+        };
+        overlays = builtins.attrValues self.overlays;
+      }
+    );
+
+    pkgsForPlatform = lib.mapAttrs (platform: conf: mkPlatformPkgs conf) platforms;
 
     # Do this complicated evaluation stuff here
     # to make Nix understand that we want to use
@@ -49,13 +67,16 @@
     # from scratch.
     #forEachSystem = systems: fn: lib.genAttrs systems (system: fn system);
     #forAllSystems = forEachSystem rpiSystems;
-    forEachPlatform = fn: lib.mapAttrs (plat: cfg: fn cfg.pkgsCross cfg) platforms;
+    forEachPlatform = fn: lib.mapAttrs (platform: conf: fn pkgsForPlatform.${platform} conf) platforms;
   in {
     inherit lib;
     packages = forEachPlatform (
-      pkgs: cfg:
+      pkgs: _:
         import ./packages {inherit pkgs;}
     );
+    overlays = {
+      patches = import ./overlays/patches.nix;
+    };
 
     #formatter = forEachPlatform (_: pkgsNative.alejandra);
     #checks = forEachPlatform (pkgs': self.packages.${pkgs'.system});

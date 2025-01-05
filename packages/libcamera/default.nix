@@ -2,6 +2,7 @@
   stdenv,
   lib,
   fetchgit,
+  breakpointHook,
   doxygen,
   graphviz,
   gst_all_1,
@@ -61,6 +62,7 @@ stdenv.mkDerivation {
 
   nativeBuildInputs =
     [
+      breakpointHook
       doxygen
       graphviz
       meson
