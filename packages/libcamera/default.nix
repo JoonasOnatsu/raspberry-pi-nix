@@ -25,7 +25,7 @@
 }:
 stdenv.mkDerivation {
   pname = "libcamera";
-  version = "v0.3.1+rpt20240906";
+  version = "v0.3.1"; # v0.3.1+rpt20240906
 
   src = fetchgit {
     url = "https://github.com/raspberrypi/libcamera";

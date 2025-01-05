@@ -13,9 +13,9 @@
   };
 
   # Attributes for each Raspberry Pi system.
-  # We need to use the platform definitions
-  # to wrestle nixpkgs evaluation into
-  # using binary cache.
+  # Use 'pkgsCross' from 'nixpkgs' if possible,
+  # to leverage binary caches. If not, define
+  # custom 'pkgs' for the platform.
   # https://en.wikipedia.org/wiki/Raspberry_Pi#Specifications
   rpiSystems = rec {
     raspberryPi = {
