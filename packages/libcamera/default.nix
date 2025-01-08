@@ -3,26 +3,25 @@
   lib,
   fetchgit,
   breakpointHook,
+  makeFontsConf,
   doxygen,
   graphviz,
-  gst_all_1,
-  gtest,
-  libdrm,
-  libevent,
-  libpisp,
-  libyaml,
-  lttng-ust,
-  makeFontsConf,
   meson,
   ninja,
-  openssl,
   pkg-config,
+  openssl,
+  gst_all_1,
+  libevent,
+  libdrm,
+  systemd,
+  lttng-ust,
+  libyaml,
+  libpisp,
   python3,
   python3Packages,
-  systemd, # for libudev
   withQcam ? false,
-  qt5, # withQcam
-  libtiff, # withQcam
+  qt5,
+  libtiff,
 }:
 stdenv.mkDerivation {
   pname = "libcamera";
@@ -39,7 +38,7 @@ stdenv.mkDerivation {
     ./libcamera-no-timeout.patch
   ];
 
-  strictDeps = true;
+  #strictDeps = true;
 
   outputs = ["out" "dev"];
 
@@ -60,23 +59,24 @@ stdenv.mkDerivation {
     patchShebangs src/py/
   '';
 
+  # https://github.com/NixOS/nixpkgs/issues/305858
   nativeBuildInputs =
     [
-      breakpointHook
-      doxygen
+      #breakpointHook
+      #doxygen
       graphviz
       meson
       ninja
       openssl
       pkg-config
       python3
-    ]
-    ++ (with python3Packages; [
-      jinja2
-      ply
-      pybind11
-      pyyaml
-      sphinx
+    ] ++ (with python3Packages; [
+        jinja2
+        ply
+        pybind11
+        python3-gnutls
+        pyyaml
+        #sphinx
     ])
     ++ (lib.optional withQcam qt5.wrapQtAppsHook);
 
@@ -93,7 +93,7 @@ stdenv.mkDerivation {
       libevent
       libdrm
 
-      # hotplugging
+      # hotplugging (udev)
       systemd
 
       # lttng tracing
@@ -102,7 +102,7 @@ stdenv.mkDerivation {
       # yamlparser
       libyaml
 
-      gtest
+      #gtest
       libpisp
     ]
     ++ (lib.optionals withQcam [
