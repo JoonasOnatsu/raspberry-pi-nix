@@ -1,27 +1,31 @@
+# https://github.com/RPi-Distro/libcamera/blob/pios/bookworm/debian/control
 {
   stdenv,
   lib,
   fetchgit,
   breakpointHook,
-  makeFontsConf,
-  doxygen,
-  graphviz,
-  meson,
-  ninja,
-  pkg-config,
-  openssl,
+  boost,
+  gnutls,
   gst_all_1,
   libevent,
-  libdrm,
-  systemd,
-  lttng-ust,
-  libyaml,
   libpisp,
+  libyaml,
+  lttng-ust,
+  makeFontsConf,
+  meson,
+  ninja,
+  openssl,
+  pkg-config,
   python3,
   python3Packages,
+  systemd,
+  withSDL ? true,
+  SDL2,
+  libdrm,
+  libjpeg,
   withQcam ? false,
-  qt5,
   libtiff,
+  qt5,
 }:
 stdenv.mkDerivation {
   pname = "libcamera";
@@ -38,9 +42,12 @@ stdenv.mkDerivation {
     ./libcamera-no-timeout.patch
   ];
 
-  #strictDeps = true;
+  strictDeps = true;
 
-  outputs = ["out" "dev"];
+  outputs = [
+    "out"
+    "dev"
+  ];
 
   # libcamera signs the IPA module libraries at install time, but they are then
   # modified by stripping and RPATH fixup. Therefore, we need to generate the
@@ -49,9 +56,11 @@ stdenv.mkDerivation {
   # If this is not done, libcamera will still try to load them, but it will
   # isolate them in separate processes, which can cause crashes for IPA modules
   # that are not designed for this (notably ipa_rpi.so).
+  # https://github.com/RPi-Distro/libcamera/blob/pios/bookworm/utils/gen-ipa-priv-key.sh
+  # https://github.com/RPi-Distro/libcamera/blob/pios/bookworm/src/ipa/ipa-sign-install.sh
   preBuild = ''
     ninja src/ipa-priv-key.pem
-    install -D ${./libcamera-ipa-priv-key.pem} src/ipa-priv-key.pem
+    install -D ${./ipa-priv-key.pem} src/ipa-priv-key.pem
   '';
 
   postPatch = ''
@@ -63,37 +72,38 @@ stdenv.mkDerivation {
   nativeBuildInputs =
     [
       #breakpointHook
-      #doxygen
-      graphviz
       meson
       ninja
       openssl
       pkg-config
       python3
-    ] ++ (with python3Packages; [
-        jinja2
-        ply
-        pybind11
-        python3-gnutls
-        pyyaml
-        #sphinx
+    ]
+    ++ (with python3Packages; [
+      jinja2
+      ply
+      pybind11
+      pyyaml
     ])
     ++ (lib.optional withQcam qt5.wrapQtAppsHook);
 
   buildInputs =
     [
+      # General deps
+      boost
+      libpisp
+
       # IPA and signing
       openssl
+      gnutls
 
-      # gstreamer integration
+      # Gstreamer integration
       gst_all_1.gstreamer
       gst_all_1.gst-plugins-base
 
-      # cam integration
+      # Cam integration
       libevent
-      libdrm
 
-      # hotplugging (udev)
+      # Hotplugging (udev)
       systemd
 
       # lttng tracing
@@ -101,10 +111,19 @@ stdenv.mkDerivation {
 
       # yamlparser
       libyaml
-
-      #gtest
-      libpisp
     ]
+    ++ (lib.optionals stdenv.hostPlatform.isAarch32 (with python3Packages; [
+      # Build uses the host library by default, which causes
+      # an error when building on a 64-bit host to 32-bit target,
+      # e.g. x86_64-linux -> armv6l. Adding this to build deps
+      # fixes this issue.
+      pybind11
+    ]))
+    ++ (lib.optionals withSDL [
+      SDL2
+      libdrm # Cam integration
+      libjpeg
+    ])
     ++ (lib.optionals withQcam [
       libtiff
       qt5.qtbase
@@ -115,9 +134,10 @@ stdenv.mkDerivation {
     "--buildtype=release"
     "-Dpipelines=rpi/vc4,rpi/pisp"
     "-Dipas=rpi/vc4,rpi/pisp"
-    "-Dv4l2=true"
     "-Dgstreamer=enabled"
     "-Dpycamera=enabled"
+    "-Dudev=enabled"
+    "-Dv4l2=true"
     "-Dtest=false"
     "-Dqcam=${
       if withQcam
