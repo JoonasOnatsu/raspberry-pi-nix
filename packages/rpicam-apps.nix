@@ -26,7 +26,7 @@ stdenv.mkDerivation rec {
 
   src = fetchgit {
     url = "https://github.com/raspberrypi/rpicam-apps";
-    rev = "v${version}";
+    rev = "${version}";
     #hash = "sha256-dDb4/SL5SPuBhmp1g8h8ZMq9PnG2SZMIik2gnO8PkuY=";
     hash = "sha256-qCYGrcibOeGztxf+sd44lD6VAOGoUNwRqZDdAmcTa/U=";
   };
