@@ -29,17 +29,19 @@
 }:
 stdenv.mkDerivation {
   pname = "libcamera";
-  version = "v0.3.1"; # v0.3.1+rpt20240906
+  version = "v0.3.2"; # v0.3.2+rpt20241119  v0.3.1+rpt20240906
 
   src = fetchgit {
     url = "https://github.com/raspberrypi/libcamera";
-    rev = "69a894c4adad524d3063dd027f5c4774485cf9db";
-    hash = "sha256-KH30jmHfxXq4j2CL7kv18DYECJRp9ECuWNPnqPZajPA=";
+    #rev = "69a894c4adad524d3063dd027f5c4774485cf9db";
+    rev = "1230f78d2f6d38d812568fd27f7b985b9ff19e39";
+    #hash = "sha256-KH30jmHfxXq4j2CL7kv18DYECJRp9ECuWNPnqPZajPA=";
+    hash = "sha256-pG8QdMY9UWH+UodXi1j/hVuVFRe58vvOsf7tOrrb774=";
   };
 
   patches = [
-    ./libcamera-installed.patch
-    ./libcamera-no-timeout.patch
+    #./libcamera-installed.patch
+    #./libcamera-no-timeout.patch
   ];
 
   strictDeps = true;
@@ -152,7 +154,7 @@ stdenv.mkDerivation {
     "-Dlc-compliance=disabled"
     # Avoid blanket -Werror to evade build failures on less
     # tested compilers.
-    #"-Dwerror=false"
+    "-Dwerror=false"
   ];
 
   # Fixes error on a deprecated declaration
