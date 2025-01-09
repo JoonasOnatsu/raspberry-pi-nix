@@ -5,7 +5,6 @@
   boost,
   cmake,
   ffmpeg,
-  libav,
   libcamera,
   libdrm,
   libepoxy,
@@ -53,7 +52,6 @@ stdenv.mkDerivation rec {
     boost
     ffmpeg
     ffmpeg.dev
-    libav
     libcamera
     libdrm
     libepoxy
