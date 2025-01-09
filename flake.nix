@@ -74,10 +74,6 @@
       pkgs: _: _:
         import ./packages {inherit pkgs;}
     );
-    checks = forEachPlatform (
-      _: platform: _:
-        self.packages.${platform}
-    );
     overlays = {
       patches = import ./overlays/patches.nix;
     };
