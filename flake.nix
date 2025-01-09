@@ -67,12 +67,16 @@
     # from scratch.
     #forEachSystem = systems: fn: lib.genAttrs systems (system: fn system);
     #forAllSystems = forEachSystem rpiSystems;
-    forEachPlatform = fn: lib.mapAttrs (platform: conf: fn pkgsForPlatform.${platform} conf) platforms;
+    forEachPlatform = fn: lib.mapAttrs (platform: conf: fn pkgsForPlatform.${platform} platform conf) platforms;
   in {
     inherit lib;
     packages = forEachPlatform (
-      pkgs: _:
+      pkgs: _: _:
         import ./packages {inherit pkgs;}
+    );
+    checks = forEachPlatform (
+      _: platform: _:
+        self.packages.${platform}
     );
     overlays = {
       patches = import ./overlays/patches.nix;
