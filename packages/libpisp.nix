@@ -3,9 +3,8 @@
 {
   stdenv,
   lib,
-  fetchgit,
+  fetchFromGitHub,
   boost,
-  cmake,
   meson,
   ninja,
   nlohmann_json,
@@ -14,8 +13,9 @@
 stdenv.mkDerivation rec {
   pname = "libpisp";
   version = "1.0.7";
-  src = fetchgit {
-    url = "https://github.com/raspberrypi/libpisp";
+  src = fetchFromGitHub {
+    owner = "raspberrypi";
+    repo = "libpisp";
     rev = "v${version}";
     hash = "sha256-Fo2UJmQHS855YSSKKmGrsQnJzXog1cdpkIOO72yYAM4=";
   };
@@ -23,7 +23,6 @@ stdenv.mkDerivation rec {
   strictDeps = true;
 
   nativeBuildInputs = [
-    #cmake
     meson
     ninja
     pkg-config
@@ -38,15 +37,8 @@ stdenv.mkDerivation rec {
     "-Dlogging=disabled"
   ];
 
-  env = {
-    # Meson is no longer able to pick up Boost automatically.
-    # https://github.com/NixOS/nixpkgs/issues/86131
-    #BOOST_INCLUDEDIR = "${lib.getDev boost}/include";
-    #BOOST_LIBRARYDIR = "${lib.getLib boost}/lib";
-
-    # Fixes error on a deprecated declaration
-    NIX_CFLAGS_COMPILE = "-Wno-error=deprecated-declarations";
-  };
+  # Fixes error on a deprecated declaration
+  env.NIX_CFLAGS_COMPILE = "-Wno-error=deprecated-declarations";
 
   meta = {
     description = "A helper library to generate run-time configuration for the Raspberry Pi ISP (PiSP), consisting of the Frontend and Backend hardware components.";
