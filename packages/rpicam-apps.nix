@@ -2,21 +2,21 @@
   stdenv,
   lib,
   fetchgit,
-  boost,
-  cmake,
-  ffmpeg,
-  libcamera,
-  libdrm,
-  libepoxy,
-  libexif,
-  libjpeg,
-  libpisp,
-  libpng,
-  libtiff,
   meson,
   ninja,
-  opencv,
+  cmake,
   pkg-config,
+  boost,
+  ffmpeg,
+  libcamera,
+  libpisp,
+  libdrm,
+  libjpeg,
+  libepoxy,
+  libexif,
+  libpng,
+  libtiff,
+  opencv,
   python3,
   python3Packages,
 }:
@@ -42,37 +42,35 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [
     meson
     ninja
-    pkg-config
-    python3
     cmake
+    pkg-config
     boost.dev
+    python3
   ];
 
   buildInputs = [
-    boost
+    libcamera
+    libpisp
     ffmpeg
     ffmpeg.dev
-    libcamera
     libdrm
+    libjpeg
     libepoxy
     libexif
-    libjpeg
-    libpisp
     libpng
     libtiff
-    ninja
     opencv
   ];
 
   mesonFlags = [
-    "-Denable_libav=enabled"
-    "-Denable_drm=enabled"
-    "-Denable_opencv=enabled"
     "-Ddownload_hailo_models=false"
-    "-Denable_egl=disabled"
-    "-Denable_hailo=disabled"
-    "-Denable_qt=disabled"
-    "-Denable_tflite=disabled"
+    (lib.mesonEnable "enable_libav" false)
+    (lib.mesonEnable "enable_drm" true)
+    (lib.mesonEnable "enable_opencv" true)
+    (lib.mesonEnable "enable_egl" false)
+    (lib.mesonEnable "enable_hailo" false)
+    (lib.mesonEnable "enable_qt" false)
+    (lib.mesonEnable "enable_tflite" false)
   ];
   env = {
     # Fixes error on a deprecated declaration
@@ -81,8 +79,8 @@ stdenv.mkDerivation rec {
 
     # Meson is no longer able to pick up Boost automatically.
     # https://github.com/NixOS/nixpkgs/issues/86131
-    BOOST_INCLUDEDIR = "${lib.getDev boost}/include";
-    BOOST_LIBRARYDIR = "${lib.getLib boost}/lib";
+    #BOOST_INCLUDEDIR = "${lib.getDev boost}/include";
+    #BOOST_LIBRARYDIR = "${lib.getLib boost}/lib";
   };
 
   meta = {
