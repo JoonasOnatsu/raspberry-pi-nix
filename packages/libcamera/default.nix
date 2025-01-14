@@ -2,7 +2,7 @@
 {
   stdenv,
   lib,
-  fetchFromGitHub,
+  fetchgit,
   breakpointHook,
   boost,
   gnutls,
@@ -27,14 +27,13 @@
   libtiff,
   qt5,
 }:
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   pname = "libcamera";
   version = "v0.3.2+rpt20240927";
-  src = fetchFromGitHub {
-    owner = "raspberrypi";
-    repo = "libcamera";
-    rev = "7330f29b38b7fa32f753297b4d1c8ecbbfcf0df5";
-    hash = "sha256-Fo2UJmQHS855YSSKKmGrsQnJzXog1cdpkIOO72yYAM4=";
+  src = fetchgit {
+    url = "https://github.com/raspberrypi/libcamera";
+    rev = "${version}";
+    hash = "sha256-TNNIOtitwFBlQx/2bcU7EeWvrMQAzEg/dS1skPJ8FMM=";
   };
 
   patches = [

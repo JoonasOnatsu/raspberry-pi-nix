@@ -3,7 +3,7 @@
 {
   stdenv,
   lib,
-  fetchFromGitHub,
+  fetchgit,
   boost,
   meson,
   ninja,
@@ -13,9 +13,8 @@
 stdenv.mkDerivation rec {
   pname = "libpisp";
   version = "1.0.7";
-  src = fetchFromGitHub {
-    owner = "raspberrypi";
-    repo = "libpisp";
+  src = fetchgit {
+    url = "https://github.com/raspberrypi/libpisp";
     rev = "v${version}";
     hash = "sha256-Fo2UJmQHS855YSSKKmGrsQnJzXog1cdpkIOO72yYAM4=";
   };
