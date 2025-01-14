@@ -36,51 +36,59 @@
     nixpkgs,
     ...
   }: let
-    inherit (self) outputs;
+    lib = nixpkgs.lib;
     localSystem = {
       config = "x86_64-unknown-linux-gnu";
       system = "x86_64-linux";
     };
-    #pkgs = nixpkgs.legacyPackages.${localSystem};
-    lib = nixpkgs.lib;
 
-    platforms = import ./lib/platforms.nix {inherit nixpkgs;};
-
-    mkPlatformPkgs = conf: (
-      import nixpkgs {
-        # Just setting the 'system' seems to screw up 'buildPlatform'/'hostPlatform'
-        inherit localSystem;
-        inherit (conf) crossSystem;
-        config = {
-          allowUnsupportedSystem = true;
-          allowUnfree = true;
-        };
-        overlays = builtins.attrValues self.overlays;
-      }
-    );
-
-    pkgsForPlatform = lib.mapAttrs (platform: conf: mkPlatformPkgs conf) platforms;
+    platforms = import ./lib/platforms.nix {
+      inherit nixpkgs localSystem;
+      overlays =
+        if builtins.hasAttr "overlays" self.outputs
+        then builtins.attrValues self.outputs.overlays
+        else [];
+    };
 
     # Do this complicated evaluation stuff here
     # to make Nix understand that we want to use
     # the binary cache to avoid building everything
     # from scratch.
-    #forEachSystem = systems: fn: lib.genAttrs systems (system: fn system);
-    #forAllSystems = forEachSystem rpiSystems;
-    forEachPlatform = fn: lib.mapAttrs (platform: conf: fn pkgsForPlatform.${platform} platform conf) platforms;
-  in {
-    inherit lib;
-    packages = forEachPlatform (
-      pkgs: _: _:
-        import ./packages {inherit pkgs;}
-    );
-    overlays = {
-      patches = import ./overlays/patches.nix;
-    };
+    forEachSystem = fn:
+      lib.genAttrs (builtins.attrNames platforms.systems) (
+        system: let
+          pkgs = platforms.systems.${system}.pkgs;
+        in
+          fn system pkgs
+      );
+  in
+    {
+      packages = forEachSystem (
+        _: pkgs:
+          import ./packages {inherit pkgs;}
+      );
+      overlays = {
+        patches = import ./overlays/patches.nix;
+      };
 
-    #formatter = forEachPlatform (_: pkgsNative.alejandra);
-    #checks = forEachPlatform (pkgs': self.packages.${pkgs'.system});
-  };
+      checks = forEachSystem (
+        system: _:
+          self.outputs.packages.${system}
+      );
+
+      formatter = forEachSystem (
+        _: pkgs:
+          pkgs.alejandra
+      );
+    }
+    // (lib.concatMapAttrs (platform: attrs: let
+      packagesForThisPlatform =
+        if builtins.isAttrs self.outputs.packages.${attrs.system}
+        then {packages = self.outputs.packages.${attrs.system};}
+        else {};
+    in {
+      "${platform}" = packagesForThisPlatform;
+    }) (builtins.removeAttrs platforms ["systems"]));
 
   # Format the Nix code in this flake
   # Alejandra is a Nix formatter with a beautiful output
