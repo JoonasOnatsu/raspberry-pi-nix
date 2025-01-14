@@ -1,31 +1,33 @@
 # https://github.com/RPi-Distro/libcamera/blob/pios/bookworm/debian/control
+# https://github.com/NixOS/nixpkgs/blob/nixos-24.11/pkgs/by-name/li/libcamera/package.nix
 {
   stdenv,
   lib,
   fetchgit,
-  breakpointHook,
-  boost,
-  gnutls,
-  gst_all_1,
-  libevent,
-  libpisp,
-  libyaml,
-  lttng-ust,
-  makeFontsConf,
   meson,
   ninja,
-  openssl,
   pkg-config,
+  makeFontsConf,
+  boost,
+  libpisp,
+  gst_all_1,
+  gtest,
+  graphviz,
+  doxygen,
+  libevent,
+  libdrm,
+  libyaml,
+  openssl,
   python3,
   python3Packages,
-  systemd,
-  withSDL ? true,
+  systemd, # for libudev
   SDL2,
-  libdrm,
   libjpeg,
+  withTracing ? lib.meta.availableOn stdenv.hostPlatform lttng-ust,
+  lttng-ust, # withTracing
   withQcam ? false,
-  libtiff,
-  qt5,
+  libtiff, # withQcam
+  qt5, # withQcam
 }:
 stdenv.mkDerivation rec {
   pname = "libcamera";
@@ -63,6 +65,10 @@ stdenv.mkDerivation rec {
     install -D ${./ipa-priv-key.pem} src/ipa-priv-key.pem
   '';
 
+  postFixup = ''
+    ../src/ipa/ipa-sign-install.sh src/ipa-priv-key.pem $out/lib/libcamera/ipa_*.so
+  '';
+
   postPatch = ''
     patchShebangs utils/
     patchShebangs src/py/
@@ -72,6 +78,8 @@ stdenv.mkDerivation rec {
   nativeBuildInputs =
     [
       #breakpointHook
+      doxygen
+      graphviz
       meson
       ninja
       openssl
@@ -81,20 +89,19 @@ stdenv.mkDerivation rec {
     ++ (with python3Packages; [
       jinja2
       ply
-      pybind11
+      sphinx
       pyyaml
     ])
     ++ (lib.optional withQcam qt5.wrapQtAppsHook);
 
   buildInputs =
     [
-      # General deps
+      # General dependencies
       boost
       libpisp
 
       # IPA and signing
       openssl
-      gnutls
 
       # Gstreamer integration
       gst_all_1.gstreamer
@@ -102,27 +109,24 @@ stdenv.mkDerivation rec {
 
       # Cam integration
       libevent
+      libdrm
 
       # Hotplugging (udev)
       systemd
 
-      # lttng tracing
-      lttng-ust
+      # pycamera
+      python3Packages.pybind11
 
       # yamlparser
       libyaml
-    ]
-    ++ (lib.optionals stdenv.hostPlatform.isAarch32 (with python3Packages; [
-      # Build uses the host library by default, which causes
-      # an error when building on a 64-bit host to 32-bit target,
-      # e.g. x86_64-linux -> armv6l. Adding this to build deps
-      # fixes this issue.
-      pybind11
-    ]))
-    ++ (lib.optionals withSDL [
+
+      # SDL
       SDL2
-      libdrm # Cam integration
       libjpeg
+    ]
+    ++ (lib.optionals withTracing [
+      # lttng tracing
+      lttng-ust
     ])
     ++ (lib.optionals withQcam [
       libtiff
@@ -132,27 +136,24 @@ stdenv.mkDerivation rec {
 
   mesonFlags = [
     "--buildtype=release"
+    "-Dv4l2=true"
     "-Dpipelines=rpi/vc4,rpi/pisp"
     "-Dipas=rpi/vc4,rpi/pisp"
-    "-Dgstreamer=enabled"
-    "-Dpycamera=enabled"
-    "-Dudev=enabled"
-    "-Dv4l2=true"
-    "-Dtest=false"
-    "-Dqcam=${
-      if withQcam
-      then "enabled"
-      else "disabled"
-    }"
-    # Documentation breaks binary compatibility.
-    # Given that upstream also provides public documentation,
-    # we can disable it here.
-    "-Ddocumentation=disabled"
+    (lib.mesonEnable "tracing" withTracing)
+    (lib.mesonEnable "qcam" withQcam)
+    (lib.mesonEnable "gstreamer" true)
+    (lib.mesonEnable "pycamera" true)
+    (lib.mesonEnable "udev" true)
+    #"-Dtest=false"
     # Tries to unconditionally download gtest when enabled
     "-Dlc-compliance=disabled"
     # Avoid blanket -Werror to evade build failures on less
     # tested compilers.
     "-Dwerror=false"
+    # Documentation breaks binary compatibility.
+    # Given that upstream also provides public documentation,
+    # we can disable it here.
+    "-Ddocumentation=disabled"
   ];
 
   # Fixes error on a deprecated declaration
@@ -164,5 +165,12 @@ stdenv.mkDerivation rec {
   meta = with lib; {
     description = "An open source camera stack and framework for Linux, Android, and ChromeOS";
     homepage = "https://libcamera.org";
+    changelog = "https://github.com/raspberrypi/libcamera/releases/tag/${src.rev}";
+    license = licenses.lgpl2Plus;
+    maintainers = with maintainers; [citadelcore];
+    badPlatforms = [
+      # Mandatory shared libraries.
+      lib.systems.inspect.platformPatterns.isStatic
+    ];
   };
 }
