@@ -23,8 +23,6 @@
   ffmpeg, # withLibav
   withOpenCV ? lib.meta.availableOn stdenv.hostPlatform opencv,
   opencv, # withOpenCV
-  withQt ? false,
-  qt5, # withQt
 }:
 stdenv.mkDerivation rec {
   pname = "rpicam-apps";
@@ -39,22 +37,23 @@ stdenv.mkDerivation rec {
 
   strictDeps = true;
 
-  outputs = ["out" "dev"];
+  outputs = [
+    "out"
+    "dev"
+  ];
 
   postPatch = ''
     patchShebangs utils/
   '';
 
-  nativeBuildInputs =
-    [
-      meson
-      ninja
-      cmake
-      pkg-config
-      python3
-      git
-    ]
-    ++ (lib.optional withQt qt5.wrapQtAppsHook);
+  nativeBuildInputs = [
+    meson
+    ninja
+    cmake
+    pkg-config
+    python3
+    git
+  ];
 
   buildInputs =
     [
@@ -66,16 +65,14 @@ stdenv.mkDerivation rec {
       libexif
       libpng
       libtiff
-      #libepoxy
+      #libepoxy # EGL
     ]
     ++ (lib.optionals withLibav [
       ffmpeg
       ffmpeg.dev
     ])
-    ++ (lib.optional withOpenCV opencv)
-    ++ (lib.optionals withQt [
-      qt5.qtbase
-      qt5.qttools
+    ++ (lib.optionals withOpenCV [
+      opencv
     ]);
 
   mesonFlags = [
@@ -84,7 +81,7 @@ stdenv.mkDerivation rec {
     "-Denable_drm=enabled"
     (lib.mesonEnable "enable_libav" withLibav)
     (lib.mesonEnable "enable_opencv" withOpenCV)
-    (lib.mesonEnable "enable_qt" withQt)
+    "-Denable_qt=disabled"
     "-Denable_egl=disabled"
     "-Denable_hailo=disabled"
     "-Denable_tflite=disabled"
