@@ -19,46 +19,10 @@
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
-        "rpi-bluez-firmware-src": "rpi-bluez-firmware-src",
-        "rpi-firmware-nonfree-src": "rpi-firmware-nonfree-src",
         "rpi-firmware-src": "rpi-firmware-src",
         "rpi-linux-6_10_12-src": "rpi-linux-6_10_12-src",
         "rpi-linux-6_6_54-src": "rpi-linux-6_6_54-src",
         "u-boot-src": "u-boot-src"
-      }
-    },
-    "rpi-bluez-firmware-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1708969706,
-        "narHash": "sha256-KakKnOBeWxh0exu44beZ7cbr5ni4RA9vkWYb9sGMb8Q=",
-        "owner": "RPi-Distro",
-        "repo": "bluez-firmware",
-        "rev": "78d6a07730e2d20c035899521ab67726dc028e1c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "RPi-Distro",
-        "ref": "bookworm",
-        "repo": "bluez-firmware",
-        "type": "github"
-      }
-    },
-    "rpi-firmware-nonfree-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1734901638,
-        "narHash": "sha256-Yu9hoy4lWQlkjq9LTTmXaLpUKzaEkJaMz9oYmOfbDos=",
-        "owner": "RPi-Distro",
-        "repo": "firmware-nonfree",
-        "rev": "a6ed59a078d52ad72f0f2b99e68f324e7411afa1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "RPi-Distro",
-        "ref": "bookworm",
-        "repo": "firmware-nonfree",
-        "type": "github"
       }
     },
     "rpi-firmware-src": {

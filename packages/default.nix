@@ -1,6 +1,4 @@
 {pkgs, ...}: rec {
-  #inherit pkgs;
-
   libpisp = pkgs.callPackage ./libpisp.nix {};
   libcamera = pkgs.callPackage ./libcamera {inherit libpisp;};
   #dtmerger = pkgs.callPackage ./dtmerger.nix {};

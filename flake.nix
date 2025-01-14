@@ -4,7 +4,6 @@
   inputs = {
     #nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    #flake-utils.url = "github:numtide/flake-utils";
     u-boot-src = {
       flake = false;
       url = "https://ftp.denx.de/pub/u-boot/u-boot-2024.07.tar.bz2";
@@ -21,14 +20,6 @@
       flake = false;
       url = "github:raspberrypi/firmware/1.20241001";
     };
-    rpi-firmware-nonfree-src = {
-      flake = false;
-      url = "github:RPi-Distro/firmware-nonfree/bookworm";
-    };
-    rpi-bluez-firmware-src = {
-      flake = false;
-      url = "github:RPi-Distro/bluez-firmware/bookworm";
-    };
   };
 
   outputs = inputs @ {
@@ -36,6 +27,8 @@
     nixpkgs,
     ...
   }: let
+    inherit (self) outputs;
+
     lib = nixpkgs.lib;
     localSystem = {
       config = "x86_64-unknown-linux-gnu";
@@ -45,8 +38,8 @@
     platforms = import ./lib/platforms.nix {
       inherit nixpkgs localSystem;
       overlays =
-        if builtins.hasAttr "overlays" self.outputs
-        then builtins.attrValues self.outputs.overlays
+        if builtins.hasAttr "overlays" outputs
+        then builtins.attrValues outputs.overlays
         else [];
     };
 
@@ -67,33 +60,22 @@
         _: pkgs:
           import ./packages {inherit pkgs;}
       );
-      overlays = {
-        patches = import ./overlays/patches.nix;
-      };
+      overlays = import ./overlays {inherit inputs outputs;};
 
-      checks = forEachSystem (
-        system: _:
-          self.outputs.packages.${system}
-      );
+      checks = forEachSystem (system: _: outputs.packages.${system});
 
-      formatter = forEachSystem (
-        _: pkgs:
-          pkgs.alejandra
-      );
+      # Format the Nix code in this flake
+      # Alejandra is a Nix formatter with a beautiful output
+      formatter = forEachSystem (_: pkgs: pkgs.alejandra);
     }
     // (lib.concatMapAttrs (platform: attrs: let
       packagesForThisPlatform =
-        if builtins.isAttrs self.outputs.packages.${attrs.system}
-        then {packages = self.outputs.packages.${attrs.system};}
+        if builtins.isAttrs outputs.packages.${attrs.system}
+        then {packages = outputs.packages.${attrs.system};}
         else {};
     in {
       "${platform}" = packagesForThisPlatform;
     }) (builtins.removeAttrs platforms ["systems"]));
-
-  # Format the Nix code in this flake
-  # Alejandra is a Nix formatter with a beautiful output
-  #formatter = forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.alejandra);
-  #checks = forAllSystems (system: self.packages.${system});
 
   #packages = forAllSystems (
   #  system: let
