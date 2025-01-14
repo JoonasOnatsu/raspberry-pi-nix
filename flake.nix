@@ -66,7 +66,8 @@
 
       # Format the Nix code in this flake
       # Alejandra is a Nix formatter with a beautiful output
-      formatter = forEachSystem (_: pkgs: pkgs.alejandra);
+      #formatter = forEachSystem (_: pkgs: pkgs.alejandra);
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
     }
     // (lib.concatMapAttrs (platform: attrs: let
       packagesForThisPlatform =
