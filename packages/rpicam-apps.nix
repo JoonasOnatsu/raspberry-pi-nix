@@ -1,3 +1,4 @@
+# https://github.com/raspberrypi/rpicam-apps/tree/main
 {
   stdenv,
   lib,
@@ -6,8 +7,8 @@
   ninja,
   cmake,
   pkg-config,
+  git,
   boost,
-  ffmpeg,
   libcamera,
   libpisp,
   libdrm,
@@ -16,9 +17,14 @@
   libexif,
   libpng,
   libtiff,
-  opencv,
   python3,
   python3Packages,
+  withLibav ? true,
+  ffmpeg, # withLibav
+  withOpenCV ? lib.meta.availableOn stdenv.hostPlatform opencv,
+  opencv, # withOpenCV
+  withQt ? false,
+  qt5, # withQt
 }:
 stdenv.mkDerivation rec {
   pname = "rpicam-apps";
@@ -39,49 +45,53 @@ stdenv.mkDerivation rec {
     patchShebangs utils/
   '';
 
-  nativeBuildInputs = [
-    meson
-    ninja
-    cmake
-    pkg-config
-    boost.dev
-    python3
-  ];
+  nativeBuildInputs =
+    [
+      meson
+      ninja
+      cmake
+      pkg-config
+      python3
+      git
+    ]
+    ++ (lib.optional withQt qt5.wrapQtAppsHook);
 
-  buildInputs = [
-    libcamera
-    libpisp
-    ffmpeg
-    ffmpeg.dev
-    libdrm
-    libjpeg
-    libepoxy
-    libexif
-    libpng
-    libtiff
-    opencv
-  ];
+  buildInputs =
+    [
+      boost
+      libcamera
+      libpisp
+      libdrm
+      libjpeg
+      libexif
+      libpng
+      libtiff
+      #libepoxy
+    ]
+    ++ (lib.optionals withLibav [
+      ffmpeg
+      ffmpeg.dev
+    ])
+    ++ (lib.optional withOpenCV opencv)
+    ++ (lib.optionals withQt [
+      qt5.qtbase
+      qt5.qttools
+    ]);
 
   mesonFlags = [
     "-Ddownload_hailo_models=false"
+    "-Ddownload_imx500_models=false"
     "-Denable_drm=enabled"
-    "-Denable_opencv=enabled"
+    (lib.mesonEnable "enable_libav" withLibav)
+    (lib.mesonEnable "enable_opencv" withOpenCV)
+    (lib.mesonEnable "enable_qt" withQt)
     "-Denable_egl=disabled"
     "-Denable_hailo=disabled"
-    "-Denable_qt=disabled"
     "-Denable_tflite=disabled"
-    "-Denable_libav=disabled"
   ];
-  env = {
-    # Fixes error on a deprecated declaration
-    NIX_CFLAGS_COMPILE = "-Wno-error=deprecated-declarations";
-    #NIX_CFLAGS_COMPILE = "-Wno-error=deprecated-declarations -I${lib.getDev boost}/include -L${lib.getDev boost}/lib";
 
-    # Meson is no longer able to pick up Boost automatically.
-    # https://github.com/NixOS/nixpkgs/issues/86131
-    #BOOST_INCLUDEDIR = "${lib.getDev boost}/include";
-    #BOOST_LIBRARYDIR = "${lib.getLib boost}/lib";
-  };
+  # Fixes error on a deprecated declaration
+  env.NIX_CFLAGS_COMPILE = "-Wno-error=deprecated-declarations";
 
   meta = {
     description = "This is a small suite of libcamera-based applications to drive the cameras on a Raspberry Pi platform.";
