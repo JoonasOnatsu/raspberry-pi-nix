@@ -2,7 +2,7 @@
 {
   stdenv,
   lib,
-  fetchgit,
+  fetchFromGitHub,
   breakpointHook,
   boost,
   gnutls,
@@ -29,19 +29,18 @@
 }:
 stdenv.mkDerivation {
   pname = "libcamera";
-  version = "v0.3.2"; # v0.3.2+rpt20241119  v0.3.1+rpt20240906
-
-  src = fetchgit {
-    url = "https://github.com/raspberrypi/libcamera";
-    #rev = "69a894c4adad524d3063dd027f5c4774485cf9db";
-    rev = "1230f78d2f6d38d812568fd27f7b985b9ff19e39";
-    #hash = "sha256-KH30jmHfxXq4j2CL7kv18DYECJRp9ECuWNPnqPZajPA=";
-    hash = "sha256-pG8QdMY9UWH+UodXi1j/hVuVFRe58vvOsf7tOrrb774=";
+  version = "v0.3.2+rpt20240927";
+  src = fetchFromGitHub {
+    owner = "raspberrypi";
+    repo = "libcamera";
+    rev = "7330f29b38b7fa32f753297b4d1c8ecbbfcf0df5";
+    hash = "sha256-Fo2UJmQHS855YSSKKmGrsQnJzXog1cdpkIOO72yYAM4=";
   };
 
   patches = [
-    #./libcamera-installed.patch
-    #./libcamera-no-timeout.patch
+    ./patches/0001_libcamera_installed.patch
+    ./patches/0002_libcamera_fix_python_paths.patch
+    ./patches/0003_ipc_no_timeout.patch
   ];
 
   strictDeps = true;
