@@ -139,11 +139,11 @@ stdenv.mkDerivation rec {
     "-Dv4l2=true"
     "-Dpipelines=rpi/vc4,rpi/pisp"
     "-Dipas=rpi/vc4,rpi/pisp"
+    "-Dgstreamer=enabled"
+    "-Dpycamera=enabled"
+    "-Dudev=enabled"
     (lib.mesonEnable "tracing" withTracing)
     (lib.mesonEnable "qcam" withQcam)
-    (lib.mesonEnable "gstreamer" true)
-    (lib.mesonEnable "pycamera" true)
-    (lib.mesonEnable "udev" true)
     #"-Dtest=false"
     # Tries to unconditionally download gtest when enabled
     "-Dlc-compliance=disabled"

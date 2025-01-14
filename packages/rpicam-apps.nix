@@ -64,13 +64,13 @@ stdenv.mkDerivation rec {
 
   mesonFlags = [
     "-Ddownload_hailo_models=false"
-    (lib.mesonEnable "enable_libav" false)
-    (lib.mesonEnable "enable_drm" true)
-    (lib.mesonEnable "enable_opencv" true)
-    (lib.mesonEnable "enable_egl" false)
-    (lib.mesonEnable "enable_hailo" false)
-    (lib.mesonEnable "enable_qt" false)
-    (lib.mesonEnable "enable_tflite" false)
+    "-Denable_drm=enabled"
+    "-Denable_opencv=enabled"
+    "-Denable_egl=disabled"
+    "-Denable_hailo=disabled"
+    "-Denable_qt=disabled"
+    "-Denable_tflite=disabled"
+    "-Denable_libav=disabled"
   ];
   env = {
     # Fixes error on a deprecated declaration
