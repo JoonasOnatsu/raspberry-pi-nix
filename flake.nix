@@ -2,8 +2,9 @@
   description = "raspberry-pi nixos configuration";
 
   inputs = {
-    #nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
     u-boot-src = {
       flake = false;
       url = "https://ftp.denx.de/pub/u-boot/u-boot-2024.07.tar.bz2";
@@ -56,10 +57,7 @@
       );
   in
     {
-      packages = forEachSystem (
-        _: pkgs:
-          import ./packages {inherit pkgs;}
-      );
+      packages = forEachSystem (_: pkgs: import ./packages {inherit pkgs;});
       overlays = import ./overlays {inherit inputs outputs;};
 
       checks = forEachSystem (system: _: outputs.packages.${system});
