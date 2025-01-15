@@ -4,11 +4,6 @@
   outputs,
   ...
 }: {
-  # Adds pkgs.unstable == inputs.nixpkgs-unstable.legacyPackages.${pkgs.system}
-  unstable = final: _: {
-    unstable = inputs.nixpkgs-unstable.legacyPackages.${final.system};
-  };
-
   # Add custom packages from the 'packages' directory
   #additions = final: _prev: import ../packages {pkgs = final;};
 
@@ -21,7 +16,5 @@
         nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [final.buildPackages.bison];
       }
     );
-
-    pixman = final.unstable.pixman;
   };
 }
