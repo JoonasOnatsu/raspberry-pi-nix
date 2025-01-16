@@ -23,6 +23,15 @@
     };
   };
 
+  nixConfig = {
+    extra-substituters = [
+      "http://cache.onatsu.net"
+    ];
+    extra-trusted-public-keys = [
+      "cache.onatsu.net:QUbCckF117/Gv2kkXTm8mRsBwW7iWV/q+G5tmx9AWKA="
+    ];
+  };
+
   outputs = inputs @ {
     self,
     nixpkgs,
