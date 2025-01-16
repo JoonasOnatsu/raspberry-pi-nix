@@ -1,7 +1,7 @@
 {pkgs, ...}: rec {
-  libpisp = pkgs.callPackage ./libpisp.nix {};
-  libcamera = pkgs.callPackage ./libcamera {inherit libpisp;};
   #dtmerger = pkgs.callPackage ./dtmerger.nix {};
-  rpicam-apps = pkgs.callPackage ./rpicam-apps.nix {inherit libpisp libcamera;};
-  raspberrypi-wireless-firmware = pkgs.callPackage ./raspberrypi-wireless-firmware.nix {};
+  libpisp = pkgs.callPackage ./libpisp {};
+  libcamera = pkgs.callPackage ./libcamera {inherit libpisp;};
+  rpicam-apps = pkgs.callPackage ./rpicam-apps {inherit libpisp libcamera;};
+  raspberrypi-wireless-firmware = pkgs.callPackage ./raspberrypi-wireless-firmware {};
 }

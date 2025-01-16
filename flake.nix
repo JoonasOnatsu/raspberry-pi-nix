@@ -66,6 +66,7 @@
       );
   in
     {
+      #inherit lib platforms;
       packages = forEachSystem (_: pkgs: import ./packages {inherit pkgs;});
       overlays = import ./overlays {inherit inputs outputs;};
 

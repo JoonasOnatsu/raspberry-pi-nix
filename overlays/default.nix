@@ -5,7 +5,13 @@
   ...
 }: {
   # Add custom packages from the 'packages' directory
-  #additions = final: _prev: import ../packages {pkgs = final;};
+  #additions = final: prev: import ../packages {pkgs = final;};
+  #additions = final: prev: {
+  #  libpisp = prev.callPackage ../packages/libpisp.nix {};
+  #  libcamera = prev.callPackage ../packages/libcamera {};
+  #  rpicam-apps = prev.callPackage ../packages/rpicam-apps.nix {inherit (final) libpisp libcamera;};
+  #  raspberrypi-wireless-firmware = prev.callPackage ../packages/raspberrypi-wireless-firmware.nix {};
+  #};
 
   # This one contains whatever you want to overlay
   # You can change versions, add patches, set compilation flags, anything really.
