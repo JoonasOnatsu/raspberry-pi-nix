@@ -1,6 +1,7 @@
 # https://github.com/NixOS/nixpkgs/issues/305858
 # https://github.com/RPi-Distro/libcamera/blob/pios/bookworm/debian/control
 # https://github.com/NixOS/nixpkgs/blob/nixos-24.11/pkgs/by-name/li/libcamera/package.nix
+# https://libcamera.org/getting-started.html
 {
   stdenv,
   lib,
@@ -9,26 +10,27 @@
   ninja,
   pkg-config,
   makeFontsConf,
-  boost,
-  libpisp,
-  gtest,
-  graphviz,
-  doxygen,
-  libevent,
-  libdrm,
-  libyaml,
-  openssl,
-  python3,
-  python3Packages,
+  boost, # required
+  python3, # required
+  python3Packages, # required
+  libyaml, # required
+  libpisp, # PiSP pipeline
+  gtest, # lc-compliance
+  libevent, # for cam support
+  libdrm, # for cam support
+  libjpeg, # for cam support
+  openssl, # IPA signing
   systemd, # for libudev
-  libjpeg,
   enableGstreamer ? true,
   gst_all_1, # enableGstreamer
+  enablePycamera ? true,
   enableTracing ? lib.meta.availableOn stdenv.hostPlatform lttng-ust,
   lttng-ust, # enableTracing
   enableQcam ? true,
   libtiff, # enableQcam
   qt5, # enableQcam
+  #graphviz, # documentation
+  #doxygen, # documentation
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "libcamera";
@@ -82,15 +84,15 @@ stdenv.mkDerivation (finalAttrs: {
       ninja
       pkg-config
       openssl
-      doxygen
-      graphviz
+      #doxygen # documentation
+      #graphviz # documentation
       python3
     ]
     ++ (with python3Packages; [
-      jinja2
-      ply
-      #sphinx
-      pyyaml
+      jinja2 # required
+      ply # required
+      pyyaml # required
+      #sphinx # documentation
     ])
     ++ (lib.optional enableQcam qt5.wrapQtAppsHook);
 
@@ -106,23 +108,22 @@ stdenv.mkDerivation (finalAttrs: {
       # Cam integration
       libevent
       libdrm
+      libjpeg
 
       # Hotplugging (udev)
-      systemd
-
-      # pycamera
-      python3Packages.pybind11
+      systemd.dev
 
       # yamlparser
       libyaml
-
-      # SDL
-      #libjpeg
     ]
     ++ (lib.optionals enableGstreamer [
       # Gstreamer integration
       gst_all_1.gstreamer
       gst_all_1.gst-plugins-base
+    ])
+    ++ (lib.optionals enablePycamera [
+      # pycamera
+      python3Packages.pybind11
     ])
     ++ (lib.optionals enableTracing [
       # lttng tracing
@@ -142,7 +143,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.mesonOption "pipelines" "rpi/vc4,rpi/pisp")
     (lib.mesonOption "ipas" "rpi/vc4,rpi/pisp")
     (lib.mesonEnable "gstreamer" enableGstreamer)
-    (lib.mesonEnable "pycamera" true)
+    (lib.mesonEnable "pycamera" enablePycamera)
     (lib.mesonEnable "tracing" enableTracing)
     (lib.mesonEnable "qcam" enableQcam)
     #"-Dtest=false"
