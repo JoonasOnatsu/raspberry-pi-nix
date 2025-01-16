@@ -28,7 +28,7 @@
   enablePycamera ? true,
   enableTracing ? lib.meta.availableOn stdenv.hostPlatform lttng-ust,
   lttng-ust, # enableTracing
-  enableQcam ? true,
+  enableQcam ? false,
   libtiff, # enableQcam
   qt6, # enableQcam
 }:
