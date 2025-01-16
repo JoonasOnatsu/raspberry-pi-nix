@@ -16,6 +16,8 @@
   libyaml, # required
   libpisp, # PiSP pipeline
   gtest, # lc-compliance
+  graphviz, # documentation
+  doxygen, # documentation
   libevent, # for cam support
   libdrm, # for cam support
   libjpeg, # for cam support
@@ -28,9 +30,7 @@
   lttng-ust, # enableTracing
   enableQcam ? true,
   libtiff, # enableQcam
-  qt5, # enableQcam
-  #graphviz, # documentation
-  #doxygen, # documentation
+  qt6, # enableQcam
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "libcamera";
@@ -42,18 +42,23 @@ stdenv.mkDerivation (finalAttrs: {
       hash = "sha256-TNNIOtitwFBlQx/2bcU7EeWvrMQAzEg/dS1skPJ8FMM=";
     };
 
-  patches = [
-    ./patches/0001_libcamera_installed.patch
-    ./patches/0002_libcamera_fix_python_paths.patch
-    ./patches/0003_ipc_no_timeout.patch
-  ];
-
   strictDeps = true;
 
   outputs = [
     "out"
     "dev"
   ];
+
+  patches = [
+    ./patches/0001_libcamera_installed.patch
+    ./patches/0002_libcamera_fix_python_paths.patch
+    ./patches/0003_ipc_no_timeout.patch
+  ];
+
+  postPatch = ''
+    patchShebangs utils/
+    patchShebangs src/py/
+  '';
 
   # libcamera signs the IPA module libraries at install time, but they are then
   # modified by stripping and RPATH fixup. Therefore, we need to generate the
@@ -73,19 +78,14 @@ stdenv.mkDerivation (finalAttrs: {
     ../src/ipa/ipa-sign-install.sh src/ipa-priv-key.pem $out/lib/libcamera/ipa_*.so
   '';
 
-  postPatch = ''
-    patchShebangs utils/
-    patchShebangs src/py/
-  '';
-
   nativeBuildInputs =
     [
       meson
       ninja
       pkg-config
       openssl
-      #doxygen # documentation
-      #graphviz # documentation
+      doxygen
+      graphviz
       python3
     ]
     ++ (with python3Packages; [
@@ -94,11 +94,10 @@ stdenv.mkDerivation (finalAttrs: {
       pyyaml # required
       #sphinx # documentation
     ])
-    ++ (lib.optional enableQcam qt5.wrapQtAppsHook);
+    ++ (lib.optional enableQcam qt6.wrapQtAppsHook);
 
   buildInputs =
     [
-      # General dependencies
       boost
       libpisp
 
@@ -132,21 +131,21 @@ stdenv.mkDerivation (finalAttrs: {
     ++ (lib.optionals enableQcam [
       # QCAM support
       libtiff
-      qt5.qtbase
-      qt5.qttools
+      qt6.qtbase
+      qt6.qttools
     ]);
 
   mesonFlags = [
     "--buildtype=release"
     (lib.mesonBool "v4l2" true)
     (lib.mesonBool "udev" true)
-    (lib.mesonOption "pipelines" "rpi/vc4,rpi/pisp")
-    (lib.mesonOption "ipas" "rpi/vc4,rpi/pisp")
+    (lib.mesonOption "pipelines" "auto")
+    #(lib.mesonOption "pipelines" "rpi/vc4,rpi/pisp")
+    #(lib.mesonOption "ipas" "rpi/vc4,rpi/pisp")
     (lib.mesonEnable "gstreamer" enableGstreamer)
     (lib.mesonEnable "pycamera" enablePycamera)
     (lib.mesonEnable "tracing" enableTracing)
     (lib.mesonEnable "qcam" enableQcam)
-    #"-Dtest=false"
     # Tries to unconditionally download gtest when enabled
     "-Dlc-compliance=disabled"
     # Avoid blanket -Werror to evade build failures on less
