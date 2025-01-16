@@ -84,15 +84,15 @@ stdenv.mkDerivation (finalAttrs: {
       ninja
       pkg-config
       openssl
-      doxygen
-      graphviz
+      doxygen # documentation
+      graphviz # documentation
       python3
     ]
     ++ (with python3Packages; [
-      jinja2 # required
-      ply # required
-      pyyaml # required
-      #sphinx # documentation
+      jinja2
+      ply
+      pyyaml
+      sphinx # documentation
     ])
     ++ (lib.optional enableQcam qt6.wrapQtAppsHook);
 
@@ -138,7 +138,6 @@ stdenv.mkDerivation (finalAttrs: {
   mesonFlags = [
     "--buildtype=release"
     (lib.mesonBool "v4l2" true)
-    (lib.mesonBool "udev" true)
     (lib.mesonOption "pipelines" "auto")
     #(lib.mesonOption "pipelines" "rpi/vc4,rpi/pisp")
     #(lib.mesonOption "ipas" "rpi/vc4,rpi/pisp")
