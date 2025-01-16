@@ -1,7 +1,12 @@
-{pkgs, ...}: rec {
-  #dtmerger = pkgs.callPackage ./dtmerger.nix {};
-  libpisp = pkgs.callPackage ./libpisp {};
-  libcamera = pkgs.callPackage ./libcamera {inherit libpisp;};
-  rpicam-apps = pkgs.callPackage ./rpicam-apps {inherit libpisp libcamera;};
-  raspberrypi-wireless-firmware = pkgs.callPackage ./raspberrypi-wireless-firmware {};
-}
+# https://nix.dev/tutorials/callpackage#interdependent-package-sets
+{pkgs, ...}: let
+  callPackage = pkgs.lib.callPackageWith (pkgs // packages);
+  packages = {
+    libpisp = callPackage ./libpisp {};
+    libcamera = callPackage ./libcamera {};
+    rpicam-apps = callPackage ./rpicam-apps {};
+    raspberrypi-wireless-firmware = callPackage ./raspberrypi-wireless-firmware {};
+    #dtmerger = callPackage ./dtmerger.nix {};
+  };
+in
+  packages

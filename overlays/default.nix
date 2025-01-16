@@ -5,7 +5,7 @@
   ...
 }: {
   # Add custom packages from the 'packages' directory
-  #additions = final: prev: import ../packages {pkgs = final;};
+  additions = final: prev: import ../packages {pkgs = final;};
   #additions = final: prev: {
   #  libpisp = prev.callPackage ../packages/libpisp.nix {};
   #  libcamera = prev.callPackage ../packages/libcamera {};

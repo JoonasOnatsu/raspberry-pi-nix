@@ -1,3 +1,4 @@
+# https://github.com/NixOS/nixpkgs/issues/305858
 # https://github.com/RPi-Distro/libcamera/blob/pios/bookworm/debian/control
 # https://github.com/NixOS/nixpkgs/blob/nixos-24.11/pkgs/by-name/li/libcamera/package.nix
 {
@@ -10,7 +11,6 @@
   makeFontsConf,
   boost,
   libpisp,
-  gst_all_1,
   gtest,
   graphviz,
   doxygen,
@@ -21,22 +21,24 @@
   python3,
   python3Packages,
   systemd, # for libudev
-  SDL2,
   libjpeg,
-  withTracing ? lib.meta.availableOn stdenv.hostPlatform lttng-ust,
-  lttng-ust, # withTracing
-  withQcam ? false,
-  libtiff, # withQcam
-  qt5, # withQcam
+  enableGstreamer ? true,
+  gst_all_1, # enableGstreamer
+  enableTracing ? lib.meta.availableOn stdenv.hostPlatform lttng-ust,
+  lttng-ust, # enableTracing
+  enableQcam ? true,
+  libtiff, # enableQcam
+  qt5, # enableQcam
 }:
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libcamera";
   version = "v0.3.2+rpt20240927";
-  src = fetchgit {
-    url = "https://github.com/raspberrypi/libcamera";
-    rev = "${version}";
-    hash = "sha256-TNNIOtitwFBlQx/2bcU7EeWvrMQAzEg/dS1skPJ8FMM=";
-  };
+  src = with finalAttrs;
+    fetchgit {
+      url = "https://github.com/raspberrypi/libcamera";
+      rev = "${version}";
+      hash = "sha256-TNNIOtitwFBlQx/2bcU7EeWvrMQAzEg/dS1skPJ8FMM=";
+    };
 
   patches = [
     ./patches/0001_libcamera_installed.patch
@@ -74,25 +76,23 @@ stdenv.mkDerivation rec {
     patchShebangs src/py/
   '';
 
-  # https://github.com/NixOS/nixpkgs/issues/305858
   nativeBuildInputs =
     [
-      #breakpointHook
-      doxygen
-      graphviz
       meson
       ninja
-      openssl
       pkg-config
+      openssl
+      doxygen
+      graphviz
       python3
     ]
     ++ (with python3Packages; [
       jinja2
       ply
-      sphinx
+      #sphinx
       pyyaml
     ])
-    ++ (lib.optional withQcam qt5.wrapQtAppsHook);
+    ++ (lib.optional enableQcam qt5.wrapQtAppsHook);
 
   buildInputs =
     [
@@ -102,10 +102,6 @@ stdenv.mkDerivation rec {
 
       # IPA and signing
       openssl
-
-      # Gstreamer integration
-      gst_all_1.gstreamer
-      gst_all_1.gst-plugins-base
 
       # Cam integration
       libevent
@@ -121,14 +117,19 @@ stdenv.mkDerivation rec {
       libyaml
 
       # SDL
-      SDL2
-      libjpeg
+      #libjpeg
     ]
-    ++ (lib.optionals withTracing [
+    ++ (lib.optionals enableGstreamer [
+      # Gstreamer integration
+      gst_all_1.gstreamer
+      gst_all_1.gst-plugins-base
+    ])
+    ++ (lib.optionals enableTracing [
       # lttng tracing
       lttng-ust
     ])
-    ++ (lib.optionals withQcam [
+    ++ (lib.optionals enableQcam [
+      # QCAM support
       libtiff
       qt5.qtbase
       qt5.qttools
@@ -136,14 +137,14 @@ stdenv.mkDerivation rec {
 
   mesonFlags = [
     "--buildtype=release"
-    "-Dv4l2=true"
-    "-Dpipelines=rpi/vc4,rpi/pisp"
-    "-Dipas=rpi/vc4,rpi/pisp"
-    "-Dgstreamer=enabled"
-    "-Dpycamera=enabled"
-    "-Dudev=enabled"
-    (lib.mesonEnable "tracing" withTracing)
-    (lib.mesonEnable "qcam" withQcam)
+    (lib.mesonBool "v4l2" true)
+    (lib.mesonBool "udev" true)
+    (lib.mesonOption "pipelines" "rpi/vc4,rpi/pisp")
+    (lib.mesonOption "ipas" "rpi/vc4,rpi/pisp")
+    (lib.mesonEnable "gstreamer" enableGstreamer)
+    (lib.mesonEnable "pycamera" true)
+    (lib.mesonEnable "tracing" enableTracing)
+    (lib.mesonEnable "qcam" enableQcam)
     #"-Dtest=false"
     # Tries to unconditionally download gtest when enabled
     "-Dlc-compliance=disabled"
@@ -173,4 +174,4 @@ stdenv.mkDerivation rec {
       lib.systems.inspect.platformPatterns.isStatic
     ];
   };
-}
+})
