@@ -22,7 +22,7 @@
   ffmpeg, # libavSupport
   opencvSupport ? lib.meta.availableOn stdenv.hostPlatform opencv,
   opencv, # opencvSupport
-  tfliteSupport ? lib.meta.availableOn stdenv.hostPlatform tensorflow-lite,
+  tfliteSupport ? false, #lib.meta.availableOn stdenv.hostPlatform tensorflow-lite,
   tensorflow-lite, # tfliteSupport
   qtSupport ? false,
   qt5, # qtSupport
