@@ -19,21 +19,21 @@
   libtiff,
   python3,
   python3Packages,
-  withLibav ? true,
-  ffmpeg, # withLibav
-  withOpenCV ? lib.meta.availableOn stdenv.hostPlatform opencv,
-  opencv, # withOpenCV
+  libavSupport ? true,
+  ffmpeg, # libavSupport
+  opencvSupport ? lib.meta.availableOn stdenv.hostPlatform opencv,
+  opencv, # opencvSupport
 }:
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "rpicam-apps";
-  version = "v1.5.2";
+  version = "1.5.2";
 
-  src = fetchgit {
-    url = "https://github.com/raspberrypi/rpicam-apps";
-    rev = "${version}";
-    #hash = "sha256-dDb4/SL5SPuBhmp1g8h8ZMq9PnG2SZMIik2gnO8PkuY=";
-    hash = "sha256-qCYGrcibOeGztxf+sd44lD6VAOGoUNwRqZDdAmcTa/U=";
-  };
+  src = with finalAttrs;
+    fetchgit {
+      url = "https://github.com/raspberrypi/rpicam-apps";
+      rev = "v${version}";
+      hash = "sha256-qCYGrcibOeGztxf+sd44lD6VAOGoUNwRqZDdAmcTa/U=";
+    };
 
   strictDeps = true;
 
@@ -67,24 +67,26 @@ stdenv.mkDerivation rec {
       libtiff
       #libepoxy # EGL
     ]
-    ++ (lib.optionals withLibav [
+    ++ (lib.optionals libavSupport [
       ffmpeg
       ffmpeg.dev
     ])
-    ++ (lib.optionals withOpenCV [
+    ++ (lib.optionals opencvSupport [
       opencv
     ]);
 
   mesonFlags = [
-    "-Ddownload_hailo_models=false"
-    "-Ddownload_imx500_models=false"
-    "-Denable_drm=enabled"
-    (lib.mesonEnable "enable_libav" withLibav)
-    (lib.mesonEnable "enable_opencv" withOpenCV)
-    "-Denable_qt=disabled"
-    "-Denable_egl=disabled"
-    "-Denable_hailo=disabled"
-    "-Denable_tflite=disabled"
+    # TODO: download the models separately and
+    # add them to the build
+    (lib.mesonBool "download_hailo_models" false)
+    (lib.mesonBool "download_imx500_models" false)
+    (lib.mesonEnable "enable_drm" true)
+    (lib.mesonEnable "enable_libav" libavSupport)
+    (lib.mesonEnable "enable_opencv" opencvSupport)
+    (lib.mesonEnable "enable_qt" false)
+    (lib.mesonEnable "enable_egl" false)
+    (lib.mesonEnable "enable_hailo" false)
+    (lib.mesonEnable "enable_tflite" false)
   ];
 
   # Fixes error on a deprecated declaration
@@ -100,4 +102,4 @@ stdenv.mkDerivation rec {
       "armv7l-linux"
     ];
   };
-}
+})
