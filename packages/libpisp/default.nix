@@ -4,20 +4,22 @@
   stdenv,
   lib,
   fetchgit,
-  boost,
   meson,
   ninja,
-  nlohmann_json,
   pkg-config,
+  boost,
+  nlohmann_json,
 }:
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libpisp";
   version = "1.0.7";
-  src = fetchgit {
-    url = "https://github.com/raspberrypi/libpisp";
-    rev = "v${version}";
-    hash = "sha256-Fo2UJmQHS855YSSKKmGrsQnJzXog1cdpkIOO72yYAM4=";
-  };
+
+  src = with finalAttrs;
+    fetchgit {
+      url = "https://github.com/raspberrypi/libpisp";
+      rev = "v${version}";
+      hash = "sha256-Fo2UJmQHS855YSSKKmGrsQnJzXog1cdpkIOO72yYAM4=";
+    };
 
   strictDeps = true;
 
@@ -33,7 +35,7 @@ stdenv.mkDerivation rec {
   ];
 
   mesonFlags = [
-    "-Dlogging=disabled"
+    (lib.mesonEnable "logging" false)
   ];
 
   # Fixes error on a deprecated declaration
@@ -49,4 +51,4 @@ stdenv.mkDerivation rec {
       "armv7l-linux"
     ];
   };
-}
+})
