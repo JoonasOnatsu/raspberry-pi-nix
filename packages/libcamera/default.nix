@@ -34,11 +34,11 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "libcamera";
-  version = "v0.3.2+rpt20240927";
+  version = "0.3.2+rpt20240927";
   src = with finalAttrs;
     fetchgit {
       url = "https://github.com/raspberrypi/libcamera";
-      rev = "${version}";
+      rev = "v${version}";
       hash = "sha256-TNNIOtitwFBlQx/2bcU7EeWvrMQAzEg/dS1skPJ8FMM=";
     };
 
