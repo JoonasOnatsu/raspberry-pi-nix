@@ -40,5 +40,18 @@
         mesonFlags = [];
       }
     );
+
+    # Use the latest available firmware
+    raspberrypifw = prev.raspberrypifw.overrideAttrs (
+      finalAttrs: previousAttrs: {
+        version = "1.20241126";
+        src = final.fetchFromGitHub {
+          owner = "raspberrypi";
+          repo = "firmware";
+          rev = finalAttrs.version;
+          hash = "sha256-MCutxzdSFoZ4hn2Fxk2AHHgWCt/Jgc+reqJZHUuSKOc=";
+        };
+      }
+    );
   };
 }

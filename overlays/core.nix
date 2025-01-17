@@ -105,18 +105,6 @@ in
       #
       # 1. https://forums.raspberrypi.com/viewtopic.php?t=329799#p1974233
     };
-
-    # default to latest firmware
-    raspberrypiWirelessFirmware =
-      final.callPackage
-      (
-        import ./raspberrypi-wireless-firmware.nix {
-          bluez-firmware = rpi-bluez-firmware-src;
-          firmware-nonfree = rpi-firmware-nonfree-src;
-        }
-      )
-      {};
-    raspberrypifw = prev.raspberrypifw.overrideAttrs (oldfw: {src = rpi-firmware-src;});
   }
   // {
     # rpi kernels and firmware are available at
