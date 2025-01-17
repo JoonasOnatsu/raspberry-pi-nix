@@ -13,7 +13,6 @@
   libpisp,
   libdrm,
   libjpeg,
-  libepoxy,
   libexif,
   libpng,
   libtiff,
@@ -23,6 +22,13 @@
   ffmpeg, # libavSupport
   opencvSupport ? lib.meta.availableOn stdenv.hostPlatform opencv,
   opencv, # opencvSupport
+  tfliteSupport ? lib.meta.availableOn stdenv.hostPlatform tensorflow-lite,
+  tensorflow-lite, # tfliteSupport
+  qtSupport ? false,
+  qt5, # qtSupport
+  eglSupport ? false,
+  xorg, # eglSupport
+  libepoxy, # eglSupport
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "rpicam-apps";
@@ -46,14 +52,16 @@ stdenv.mkDerivation (finalAttrs: {
     patchShebangs utils/
   '';
 
-  nativeBuildInputs = [
-    meson
-    ninja
-    cmake
-    pkg-config
-    python3
-    git
-  ];
+  nativeBuildInputs =
+    [
+      meson
+      ninja
+      cmake
+      pkg-config
+      python3
+      git
+    ]
+    ++ (lib.optional qtSupport qt5.wrapQtAppsHook);
 
   buildInputs =
     [
@@ -65,7 +73,6 @@ stdenv.mkDerivation (finalAttrs: {
       libexif
       libpng
       libtiff
-      #libepoxy # EGL
     ]
     ++ (lib.optionals libavSupport [
       ffmpeg
@@ -73,6 +80,19 @@ stdenv.mkDerivation (finalAttrs: {
     ])
     ++ (lib.optionals opencvSupport [
       opencv
+    ])
+    ++ (lib.optionals tfliteSupport [
+      tensorflow-lite
+    ])
+    ++ (lib.optionals qtSupport [
+      # QT preview
+      qt5.qtbase
+      qt5.qttools
+    ])
+    ++ (lib.optionals eglSupport [
+      # EGL preview
+      libepoxy
+      xorg.libX11.dev
     ]);
 
   mesonFlags = [
@@ -83,10 +103,10 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.mesonEnable "enable_drm" true)
     (lib.mesonEnable "enable_libav" libavSupport)
     (lib.mesonEnable "enable_opencv" opencvSupport)
-    (lib.mesonEnable "enable_qt" false)
-    (lib.mesonEnable "enable_egl" false)
+    (lib.mesonEnable "enable_tflite" tfliteSupport)
+    (lib.mesonEnable "enable_qt" qtSupport)
+    (lib.mesonEnable "enable_egl" eglSupport)
     (lib.mesonEnable "enable_hailo" false)
-    (lib.mesonEnable "enable_tflite" false)
   ];
 
   # Fixes error on a deprecated declaration
