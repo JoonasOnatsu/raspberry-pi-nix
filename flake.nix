@@ -44,7 +44,7 @@
 
     out = system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      appliedOverlay = self.overlays.default pkgs pkgs;
+      appliedOverlay = self.overlays.rpi-pkgs pkgs pkgs;
     in {
       packages = appliedOverlay;
     };
@@ -52,7 +52,7 @@
     flake-utils.lib.eachSystem systems
     out
     // {
-      overlays.default = final: prev:
+      overlays.rpi-pkgs = final: prev:
         import ./packages {
           pkgs = final;
         };
