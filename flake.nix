@@ -17,10 +17,6 @@
       flake = false;
       url = "github:raspberrypi/linux/rpi-6.10.y";
     };
-    rpi-firmware-src = {
-      flake = false;
-      url = "github:raspberrypi/firmware/1.20241001";
-    };
   };
 
   nixConfig = {
@@ -67,7 +63,7 @@
   in
     {
       #inherit lib platforms;
-      packages = forEachSystem (_: pkgs: import ./packages {inherit pkgs;});
+      packages = forEachSystem (_: pkgs: import ./packages {inherit pkgs platforms;});
       overlays = import ./overlays {inherit inputs outputs;};
 
       checks = forEachSystem (system: _: outputs.packages.${system});
@@ -76,6 +72,8 @@
       # Alejandra is a Nix formatter with a beautiful output
       #formatter = forEachSystem (_: pkgs: pkgs.alejandra);
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
+
+      #nixosModules = import ./modules;
     }
     // (lib.concatMapAttrs (platform: attrs: let
       packagesForThisPlatform =

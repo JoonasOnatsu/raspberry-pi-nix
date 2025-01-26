@@ -6,6 +6,7 @@
     libcamera = callPackage ./libcamera {};
     rpicam-apps = callPackage ./rpicam-apps {};
     raspberrypi-wireless-firmware = callPackage ./raspberrypi-wireless-firmware {};
+    #rpi-kernel = callPackage ./rpi-kernel {inherit platforms;};
     #dtmerger = callPackage ./dtmerger.nix {};
   };
 in

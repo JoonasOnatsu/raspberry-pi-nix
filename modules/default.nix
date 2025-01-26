@@ -1,0 +1,3 @@
+{
+  configTxt = import ./config.nix;
+}

@@ -19,27 +19,9 @@
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
-        "rpi-firmware-src": "rpi-firmware-src",
         "rpi-linux-6_10_12-src": "rpi-linux-6_10_12-src",
         "rpi-linux-6_6_54-src": "rpi-linux-6_6_54-src",
         "u-boot-src": "u-boot-src"
-      }
-    },
-    "rpi-firmware-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1727798811,
-        "narHash": "sha256-eavbshXGYmkYR33y9FLcQMJoAYdYTESVEy0g/RRXnb0=",
-        "owner": "raspberrypi",
-        "repo": "firmware",
-        "rev": "287e6a6c2d3b50eee3e2c5b2eacdd907e5cbe09a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "raspberrypi",
-        "ref": "1.20241001",
-        "repo": "firmware",
-        "type": "github"
       }
     },
     "rpi-linux-6_10_12-src": {

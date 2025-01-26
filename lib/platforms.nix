@@ -27,6 +27,11 @@ let
     }
   );
 
+  pkgs = import nixpkgs {
+    inherit localSystem overlays;
+    config = nixpkgsConfig;
+  };
+
   # Evaluate the 'crossSystem' config using the 'elaborate' function,
   # This generates detailed attrsets which can be compared.
   # https://github.com/NixOS/nixpkgs/blob/master/lib/systems/default.nix#L63
@@ -43,9 +48,10 @@ let
     raspberryPi = rec {
       board = "bcm2835";
       system = "armv6l-linux";
+      defconfig = "bcmrpi_defconfig";
       crossSystem =
         lib.systems.elaborate (lib.mergeAttrs lib.systems.platforms.raspberrypi {config = "armv6l-unknown-linux-gnueabihf";});
-      pkgs = mkPkgs crossSystem;
+      #pkgs = mkPkgs crossSystem;
       #pkgsCross = pkgs.pkgsCross.raspberryPi;
     };
     raspberryPiZero = raspberryPi;
@@ -53,26 +59,32 @@ let
     raspberryPi2 = rec {
       board = "bcm2836";
       system = "armv7l-linux";
+      defconfig = "bcm2709_defconfig";
       crossSystem =
         lib.systems.elaborate (lib.mergeAttrs lib.systems.platforms.raspberrypi2 {config = "armv7l-unknown-linux-gnueabihf";});
-      pkgs = mkPkgs crossSystem;
+      #pkgs = mkPkgs crossSystem;
       #pkgsCross = pkgs.pkgsCross.armv7l-hf-multiplatform;
     };
     raspberryPi3 = rec {
       board = "bcm2837";
       system = "aarch64-linux";
+      defconfig = "bcmrpi3_defconfig";
       crossSystem = lib.systems.elaborate (lib.mergeAttrs lib.systems.platforms.aarch64-multiplatform {config = "aarch64-unknown-linux-gnu";});
-      pkgs = mkPkgs crossSystem;
+      #pkgs = mkPkgs crossSystem;
       #pkgsCross = pkgs.pkgsCross.aarch64-multiplatform;
     };
     raspberryPi4 = {
       board = "bcm2711";
-      inherit (raspberryPi3) system crossSystem pkgs;
+      system = "aarch64-linux";
+      defconfig = "bcm2711_defconfig";
+      crossSystem = lib.systems.elaborate (lib.mergeAttrs lib.systems.platforms.aarch64-multiplatform {config = "aarch64-unknown-linux-gnu";});
       #pkgsCross = pkgs.pkgsCross.aarch64-multiplatform;
     };
     raspberryPiZero2W = {
       board = "bcm2710";
-      inherit (raspberryPi3) system crossSystem pkgs;
+      system = "aarch64-linux";
+      defconfig = "bcm2711_defconfig";
+      crossSystem = lib.systems.elaborate (lib.mergeAttrs lib.systems.platforms.aarch64-multiplatform {config = "aarch64-unknown-linux-gnu";});
       #pkgsCross = pkgs.pkgsCross.aarch64-multiplatform;
     };
 
@@ -83,13 +95,15 @@ let
           raspberryPiZero
           raspberryPiZeroW
         ];
-        pkgs = raspberryPi.pkgs;
+        #pkgs = raspberryPi.pkgs;
+        pkgs = pkgs.pkgsCross.raspberryPi;
       };
       "armv7l-linux" = {
         platforms = [
           raspberryPi2
         ];
-        pkgs = raspberryPi2.pkgs;
+        #pkgs = raspberryPi2.pkgs;
+        pkgs = pkgs.pkgsCross.armv7l-hf-multiplatform;
       };
       "aarch64-linux" = {
         platforms = [
@@ -97,7 +111,8 @@ let
           raspberryPi4
           raspberryPiZero2W
         ];
-        pkgs = raspberryPi3.pkgs;
+        #pkgs = raspberryPi3.pkgs;
+        pkgs = pkgs.pkgsCross.aarch64-multiplatform;
       };
     };
   };
