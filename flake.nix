@@ -42,19 +42,30 @@
     ];
     lib = nixpkgs.lib;
 
+    #forAllSystems = fn: lib.genAttrs systems (system: fn system);
+
     out = system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      appliedOverlay = self.overlays.rpi-pkgs pkgs pkgs;
+      pkgs = import nixpkgs {
+        inherit system;
+        config = {};
+        overlays = builtins.attrValues self.overlays;
+      };
+      appliedOverlay = self.overlays.default pkgs pkgs;
     in {
-      packages = appliedOverlay;
+      #packages = {
+      #  inherit (pkgs) libpisp;
+      #};
+      packages = {
+        inherit (appliedOverlay) libpisp libcamera rpicam-apps;
+      };
     };
   in
     flake-utils.lib.eachSystem systems
     out
     // {
-      overlays.rpi-pkgs = final: prev:
+      overlays.default = final: prev:
         import ./packages {
-          pkgs = final;
+          pkgs = prev;
         };
     };
 
