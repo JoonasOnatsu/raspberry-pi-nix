@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    flake-utils.url = "github:numtide/flake-utils";
     #nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     u-boot-src = {
@@ -31,58 +32,31 @@
   outputs = inputs @ {
     self,
     nixpkgs,
+    flake-utils,
     ...
   }: let
-    inherit (self) outputs;
-
+    systems = [
+      "armv6l-linux"
+      "armv7l-linux"
+      "aarch64-linux"
+    ];
     lib = nixpkgs.lib;
-    localSystem = {
-      config = "x86_64-unknown-linux-gnu";
-      system = "x86_64-linux";
-    };
 
-    platforms = import ./lib/platforms.nix {
-      inherit nixpkgs localSystem;
-      overlays =
-        if builtins.hasAttr "overlays" outputs
-        then builtins.attrValues outputs.overlays
-        else [];
-    };
-
-    # Do this complicated evaluation stuff here
-    # to make Nix understand that we want to use
-    # the binary cache to avoid building everything
-    # from scratch.
-    forEachSystem = fn:
-      lib.genAttrs (builtins.attrNames platforms.systems) (
-        system: let
-          pkgs = platforms.systems.${system}.pkgs;
-        in
-          fn system pkgs
-      );
-  in
-    {
-      #inherit lib platforms;
-      packages = forEachSystem (_: pkgs: import ./packages {inherit pkgs platforms;});
-      overlays = import ./overlays {inherit inputs outputs;};
-
-      checks = forEachSystem (system: _: outputs.packages.${system});
-
-      # Format the Nix code in this flake
-      # Alejandra is a Nix formatter with a beautiful output
-      #formatter = forEachSystem (_: pkgs: pkgs.alejandra);
-      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
-
-      #nixosModules = import ./modules;
-    }
-    // (lib.concatMapAttrs (platform: attrs: let
-      packagesForThisPlatform =
-        if builtins.isAttrs outputs.packages.${attrs.system}
-        then {packages = outputs.packages.${attrs.system};}
-        else {};
+    out = system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+      appliedOverlay = self.overlays.default pkgs pkgs;
     in {
-      "${platform}" = packagesForThisPlatform;
-    }) (builtins.removeAttrs platforms ["systems"]));
+      packages = appliedOverlay;
+    };
+  in
+    flake-utils.lib.eachSystem systems
+    out
+    // {
+      overlays.default = final: prev:
+        import ./packages {
+          pkgs = final;
+        };
+    };
 
   #packages = forAllSystems (
   #  system: let
